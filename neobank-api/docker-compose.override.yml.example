@@ -1,0 +1,46 @@
+# Docker Compose Override for Local Development
+# Copy this to docker-compose.override.yml and modify as needed
+
+version: '3.8'
+
+services:
+  # Override database ports for local access
+  identity-db:
+    ports:
+      - "5432:5432"
+
+  account-db:
+    ports:
+      - "5433:5432"
+
+  transaction-db:
+    ports:
+      - "5434:5432"
+
+  compliance-db:
+    ports:
+      - "5435:5432"
+
+  # Override service ports for direct access
+  identity-service:
+    ports:
+      - "8081:8081"
+
+  account-service:
+    ports:
+      - "8082:8082"
+
+  transaction-service:
+    ports:
+      - "8083:8083"
+
+  compliance-service:
+    ports:
+      - "8084:8084"
+
+  # Mount source code for hot reload (if using dev containers)
+  # identity-service:
+  #   volumes:
+  #     - ./services/identity-service/src:/app/src
+  #   environment:
+  #     SPRING_PROFILES_ACTIVE: dev

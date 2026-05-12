@@ -1,0 +1,137 @@
+services:
+  api-gateway:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./nginx/microservices-gateway.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - identity-service
+      - account-service
+      - transaction-service
+      - compliance-service
+    networks:
+      - neobank
+
+  identity-service:
+    build:
+      context: ../services/identity-service
+      dockerfile: Dockerfile
+    environment:
+      SERVER_PORT: 8081
+      DB_HOST: identity-db
+      DB_NAME: identity
+      DB_USERNAME: identity_user
+      DB_PASSWORD: identity_password
+      JWT_SECRET: changeMeToASecretKeyThatIsAtLeast32CharactersLong
+    depends_on:
+      - identity-db
+    networks:
+      - neobank
+
+  account-service:
+    build:
+      context: ../services/account-service
+      dockerfile: Dockerfile
+    environment:
+      SERVER_PORT: 8082
+      DB_HOST: account-db
+      DB_NAME: accounts
+      DB_USERNAME: account_user
+      DB_PASSWORD: account_password
+      JWT_SECRET: changeMeToASecretKeyThatIsAtLeast32CharactersLong
+      INTERNAL_SERVICE_TOKEN: localInternalServiceTokenThatIsAtLeast32Chars
+    depends_on:
+      - account-db
+    networks:
+      - neobank
+
+  transaction-service:
+    build:
+      context: ../services/transaction-service
+      dockerfile: Dockerfile
+    environment:
+      SERVER_PORT: 8083
+      DB_HOST: transaction-db
+      DB_NAME: transactions
+      DB_USERNAME: transaction_user
+      DB_PASSWORD: transaction_password
+      JWT_SECRET: changeMeToASecretKeyThatIsAtLeast32CharactersLong
+      INTERNAL_SERVICE_TOKEN: localInternalServiceTokenThatIsAtLeast32Chars
+      ACCOUNT_SERVICE_URL: http://account-service:8082
+    depends_on:
+      - transaction-db
+      - account-service
+    networks:
+      - neobank
+
+  compliance-service:
+    build:
+      context: ../services/compliance-service
+      dockerfile: Dockerfile
+    environment:
+      SERVER_PORT: 8084
+      DB_HOST: compliance-db
+      DB_NAME: compliance
+      DB_USERNAME: compliance_user
+      DB_PASSWORD: compliance_password
+      JWT_SECRET: changeMeToASecretKeyThatIsAtLeast32CharactersLong
+      INTERNAL_SERVICE_TOKEN: localInternalServiceTokenThatIsAtLeast32Chars
+    depends_on:
+      - compliance-db
+    networks:
+      - neobank
+
+  identity-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: identity
+      POSTGRES_USER: identity_user
+      POSTGRES_PASSWORD: identity_password
+    volumes:
+      - identity-data:/var/lib/postgresql/data
+    networks:
+      - neobank
+
+  account-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: accounts
+      POSTGRES_USER: account_user
+      POSTGRES_PASSWORD: account_password
+    volumes:
+      - account-data:/var/lib/postgresql/data
+    networks:
+      - neobank
+
+  transaction-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: transactions
+      POSTGRES_USER: transaction_user
+      POSTGRES_PASSWORD: transaction_password
+    volumes:
+      - transaction-data:/var/lib/postgresql/data
+    networks:
+      - neobank
+
+  compliance-db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: compliance
+      POSTGRES_USER: compliance_user
+      POSTGRES_PASSWORD: compliance_password
+    volumes:
+      - compliance-data:/var/lib/postgresql/data
+    networks:
+      - neobank
+
+networks:
+  neobank:
+    driver: bridge
+
+volumes:
+  identity-data:
+  account-data:
+  transaction-data:
+  compliance-data:
